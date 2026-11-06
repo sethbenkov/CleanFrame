@@ -1,22 +1,25 @@
 /* Public Tizen application APIs. No Mac server, network address or credentials. */
 (function () {
   'use strict';
+  /* The kept apps on this TV: IDs confirmed from the set's own inventory. Only apps
+     with a bundled brand mark are listed here; the others use their own names. */
   var IDS = {
-    stremio: 'IkWsFHtOY9.Stremio', netflix: 'org.tizen.netflix-app',
-    disneyplus: 'MCmYXNxgcu.DisneyPlus', youtube: '9Ur5IzDKqV.TizenYouTube',
-    appletv: 'com.samsung.tv.aria-video', primevideo: 'org.tizen.primevideo',
-    abciview: 'mWK87Xghap.ABCiview', sbs: 'OyE7OuxlUi.SBSOnDemand',
-    applemusic: 'org.tizen.apple.apple-music'
+    netflix: 'org.tizen.netflix-app', primevideo: 'org.tizen.primevideo',
+    disneyplus: 'MCmYXNxgcu.DisneyPlus', hulu: 'LBUAQX1exg.Hulu',
+    appletv: 'com.samsung.tv.aria-video',
+    youtube: '9Ur5IzDKqV.TizenYouTube', spotify: 'rJeHak5zRg.Spotify',
+    hbomax: '5b8c3eb16b.BeamCTVDev', paramountplus: 'rJyOSqC6Up.CBSAllAccess'
   };
-  var STREAMING = ['as6cYRgkPy.Binge', '73iTZRTc34.Stan', '5b8c3eb16b.BeamCTVDev',
-    'cj37Ni3qXM.HBONow', 'LBUAQX1exg.Hulu', 'gzcc4LRFBF.Peacock', 'rJyOSqC6Up.CBSAllAccess',
-    'Rk72oKFsRS.OtterKidsProd', '70fRFUwYlD.OtterGAProd', 'PvWgqxV3Xa.YouTubeTV',
-    'XtU8fQk2gN.ESPN', 'ZmmGjO6VKO.slingtv', 'VtuWAiZdHN.STARZPlay', 'ckfgqqzvt0.dplus',
-    'kk8MbItQ0H.VUDU', 'Jz7aUrV2Q4.Twitch', 'OK2Rdkjmsi.IMDbTV', 'Ob3XhAVMu6.amcplus',
+  var STREAMING = ['as6cYRgkPy.Binge', '73iTZRTc34.Stan', 'cj37Ni3qXM.HBONow',
+    'gzcc4LRFBF.Peacock', 'Rk72oKFsRS.OtterKidsProd', '70fRFUwYlD.OtterGAProd',
+    'PvWgqxV3Xa.YouTubeTV', 'XtU8fQk2gN.ESPN', 'Ob3XhAVMu6.amcplus',
+    'lFBk5PWNvi.TBS',
+    'ZmmGjO6VKO.slingtv', 'VtuWAiZdHN.STARZPlay', 'ckfgqqzvt0.dplus',
+    'kk8MbItQ0H.VUDU', 'Jz7aUrV2Q4.Twitch', 'OK2Rdkjmsi.IMDbTV',
     'KaLitts8bq.tenplaySamsungTizen', 'eYuOiOLYQX.KayoSports', 'Ne2ZsPWdKl.9NOW',
-    '3KA0pm7a7V.TubiTV', 'rJeHak5zRg.Spotify', 'icp4AvUPiA.7plus'];
+    '3KA0pm7a7V.TubiTV', 'icp4AvUPiA.7plus'];
   var CONSUMER_SYSTEM = ['org.tizen.browser', 'com.microsoft.copilot'];
-  var EXTRA_BRANDS = {'rJeHak5zRg.Spotify': 'spotify', '5b8c3eb16b.BeamCTVDev': 'hbomax', 'cj37Ni3qXM.HBONow': 'hbomax', '3KA0pm7a7V.TubiTV': 'tubi'};
+  var EXTRA_BRANDS = {'cj37Ni3qXM.HBONow': 'hbomax', '3KA0pm7a7V.TubiTV': 'tubi'};
   var INTERNAL = ['adplatform.ADPlayer', 'WykOS4t4F0.cmsWebApp', '25emanual3.emanual',
     'd0m1lV1nt2.emanual', '2022ePop01.SmartTV',
     'ZODRT12q2l.WebAccountExtension', 'ByJlgt0XeD.CastSettingsApp', 'tv6pbVMQFF.PrivacyChoices'];
@@ -108,12 +111,13 @@
   }
   function art(done) {
     if (!api()) { unavailable(done); return; }
-    var finish = bounded(done);
+    var finish = bounded(done), fell = false;
+    function fallback() { if (fell) return; fell = true; launchApp('AtcSaver01.Saver', finish); }
     try {
       var data = [new tizen.ApplicationControlData('mode', ['fullscreen']), new tizen.ApplicationControlData('requester', ['mobile'])];
       var control = new tizen.ApplicationControl('http://tizen.org/appcontrol/operation/default', null, null, null, data);
-      api().launchAppControl(control, 'org.tizen.art-app', function () { finish(null); }, function (err) { finish(failure(err)); });
-    } catch (err) { finish(failure(err)); }
+      api().launchAppControl(control, 'org.tizen.art-app', function () { finish(null); }, function () { fallback(); });
+    } catch (err) { fallback(); }
   }
   function home(done) { launchApp('com.samsung.tv.csfs', done); }
   function settings(done) { launchApp('com.samsung.tv.coba.setting', done); }

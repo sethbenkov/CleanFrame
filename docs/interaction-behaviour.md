@@ -91,7 +91,11 @@ The native Home operation and startup configuration from 19 October remain separ
 
 ## Clock and rendering
 
-Both layouts show the TV's local time in 12-hour format, without AM/PM or seconds. It updates at the minute boundary and on return to the launcher. No date or clock panel is shown.
+Both layouts show the TV's local time in 12-hour format, without AM/PM or seconds. It updates at the minute boundary and on return to the launcher. No date or clock panel is shown. Under the clock, Home shows a short time-of-day greeting that follows the same update rhythm; it appears only while the launcher itself is on screen, not in previews or editors.
+
+Home carries the attic dressing: a warm dusk ground with skylight glow, rafter beams, string lights, drifting dust, stars on dark and an occasional cat silhouette crossing a rafter. The dressing is static paint between the wallpaper and the interface; reduced motion stops its slow drifts and the cat never moves.
+
+Launching a Home app also raises it into a small constellation: the four most recently launched Home apps carry a star, remembered in preferences across restarts. The star appears on Dock tiles and Photo List rows; it never blocks focus or editing.
 
 Photographic materials and blurred panel backgrounds are generated before packaging and stay aligned with the full-screen image. Photo colour and contrast metadata are also prepared offline. Navigation does not sample image pixels, run an optics engine or apply live backdrop blur. Flat backgrounds use matching light or dark panel colours. Focus feedback uses transforms and opacity; reduced motion removes animated scaling and movement while retaining opacity feedback.
 

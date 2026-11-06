@@ -4,7 +4,7 @@
 
   /* ---------- Bundled data ---------- */
   var ASSETS = 'assets/', ICONS = ASSETS + 'icons/', WP = ASSETS + 'wallpapers/';
-  var CAP = 9, SCRIM_Y = 560;
+  var CAP = 9, SCRIM_Y = 560, STAR_CAP = 4;
   var DOCK_MODES = { both: { tw: 288, th: 200, pitch: 296 }, text: { tw: 288, th: 104, pitch: 296 }, icons: { tw: 176, th: 144, pitch: 184 } };
   var GRID_ROW = 240, GRID_COL = 344, COLS = 5;
   var ED_ROW = 80, ED_SEP = 56, ED_VIEW = 752;
@@ -13,18 +13,26 @@
   var KEYS = { 37: 'left', 38: 'up', 39: 'right', 40: 'down', 13: 'ok', 27: 'back', 8: 'back', 10009: 'back', 461: 'back' };
   var FULL = 'Home holds nine apps. Remove one first.', LAST = 'Home needs one app';
 
-  var PRIMARY_APPS = [
-    { id: 'stremio', name: 'Stremio', mark: true, appId: 'IkWsFHtOY9.Stremio' },
+  /* Every kept app on this TV; the first nine form the default Home. The rest stay
+     one press away in All apps and can be pinned through Apps on Home. */
+  var KEPT_APPS = [
     { id: 'netflix', name: 'Netflix', mark: true, appId: 'org.tizen.netflix-app' },
-    { id: 'disneyplus', name: 'Disney+', mark: true, appId: 'MCmYXNxgcu.DisneyPlus' },
-    { id: 'youtube', name: 'YouTube', mark: true, appId: '9Ur5IzDKqV.TizenYouTube' },
-    { id: 'appletv', name: 'Apple TV', mark: true, appId: 'com.samsung.tv.aria-video' },
     { id: 'primevideo', name: 'Prime Video', mark: true, appId: 'org.tizen.primevideo' },
-    { id: 'abciview', name: 'ABC iview', mark: true, appId: 'mWK87Xghap.ABCiview' },
-    { id: 'sbs', name: 'SBS On Demand', mark: true, appId: 'OyE7OuxlUi.SBSOnDemand' },
-    { id: 'applemusic', name: 'Apple Music', mark: true, appId: 'org.tizen.apple.apple-music' }
+    { id: 'disneyplus', name: 'Disney+', mark: true, appId: 'MCmYXNxgcu.DisneyPlus' },
+    { id: 'hulu', name: 'Hulu', mark: true, appId: 'LBUAQX1exg.Hulu' },
+    { id: 'appletv', name: 'Apple TV', mark: true, appId: 'com.samsung.tv.aria-video' },
+    { id: 'peacock', name: 'Peacock', mark: false, appId: 'gzcc4LRFBF.Peacock' },
+    { id: 'youtube', name: 'YouTube', mark: true, appId: '9Ur5IzDKqV.TizenYouTube' },
+    { id: 'spotify', name: 'Spotify', mark: true, appId: 'rJeHak5zRg.Spotify' },
+    { id: 'hbomax', name: 'HBO Max', mark: true, appId: '5b8c3eb16b.BeamCTVDev' },
+    { id: 'paramountplus', name: 'Paramount+', mark: true, appId: 'rJyOSqC6Up.CBSAllAccess' },
+    { id: 'espn', name: 'ESPN', mark: false, appId: 'XtU8fQk2gN.ESPN' },
+    { id: 'amcplus', name: 'AMC+', mark: false, appId: 'Ob3XhAVMu6.amcplus' },
+    { id: 'tbs', name: 'TBS', mark: false, appId: 'lFBk5PWNvi.TBS' },
+    { id: 'pbskids', name: 'PBS KIDS', mark: false, appId: 'Rk72oKFsRS.OtterKidsProd' }
   ];
-  var PRIMARY = PRIMARY_APPS.map(function (a) { return a.id; }), APPS = PRIMARY_APPS.slice(), ALPHA = [];
+  var PRIMARY_APPS = KEPT_APPS.slice(0, 9);
+  var PRIMARY = PRIMARY_APPS.map(function (a) { return a.id; }), APPS = KEPT_APPS.slice(), ALPHA = [];
   var WALLS = window.CleanFrameWallpapers || [{ id: 'misty', name: 'Misty coast', tone: 'light', ut: { tr: 'mist', br: 'mist' }, frostVeil: .20 }];
   var ADAPTIVE_INK = window.CleanFrameAdaptiveInk || {};
   WALLS.forEach(function (w) { w.ut = w.ut || { tr: 'light', br: 'light' }; w.frostVeil = w.frostVeil || .12; });
@@ -66,7 +74,8 @@
     down: '<path d="m5 8.5 7 7 7-7"/>',
     updown: '<path d="m7.5 9.5 4.5-4.5 4.5 4.5M7.5 14.5l4.5 4.5 4.5-4.5"/>',
     tv: '<rect x="3" y="4.5" width="18" height="12" rx="2"/><path d="M8.5 20h7"/>',
-    warn: '<path d="M12 4 2.8 19.5h18.4Z"/><path d="M12 10v4.5M12 17.3v.1"/>'
+    warn: '<path d="M12 4 2.8 19.5h18.4Z"/><path d="M12 10v4.5M12 17.3v.1"/>',
+    star: '<path d="M12 4.4l2.3 4.9 5.3.7-3.9 3.7 1 5.3-4.7-2.6-4.7 2.6 1-5.3-3.9-3.7 5.3-.7Z"/>'
   };
 
   /* ---------- State ---------- */
@@ -340,12 +349,14 @@
     });
     if (!h.length) h = PRIMARY.slice();
     (Array.isArray(s.recent) ? s.recent : []).forEach(function (id) { if (safeId(id) && app(id) && h.indexOf(id) < 0 && recent.indexOf(id) < 0 && recent.length < 5) recent.push(id); });
+    var used = [];
+    (Array.isArray(s.used) ? s.used : []).forEach(function (id) { if (safeId(id) && app(id) && used.indexOf(id) < 0 && used.length < STAR_CAP) used.push(id); });
     return {
       bg: pick(modern.bg, LOOK_VALUES.bg, legacyList ? 'dark' : 'photo'), layout: pick(modern.layout, LOOK_VALUES.layout, legacyList ? 'list' : 'dock'),
       apps: pick(modern.apps, LOOK_VALUES.apps, legacyList ? 'text' : 'both'), controls: pick(modern.controls, LOOK_VALUES.controls, 'both'),
       focus: pick(modern.focus, LOOK_VALUES.focus, legacyList ? 'type' : 'glass'), material: pick(modern.material, LOOK_VALUES.material, 'soft'),
       font: pick(modern.font, LOOK_VALUES.font, 'manrope'), wall: wall(modern.wall || s.wallpaper) ? modern.wall || s.wallpaper : WALLS[0].id,
-      home: h, recent: recent, lastApp: h.indexOf(s.lastApp) >= 0 ? s.lastApp : h[0],
+      home: h, recent: recent, used: used, lastApp: h.indexOf(s.lastApp) >= 0 ? s.lastApp : h[0],
       mode: pick(s.mode, MODES.map(function (m) { return m.id; }), 'fixed')
     };
   }
@@ -371,7 +382,7 @@
   }
   function clearSession() { S.undo = []; S.removedAt = {}; S.note = null; S.err = null; }
   function begin() { S.note = null; }
-  function next(home, recent) { var c = lookOf(S.c); c.home = home; c.recent = recent; c.lastApp = S.c.lastApp; c.mode = S.c.mode; return c; }
+  function next(home, recent) { var c = lookOf(S.c); c.home = home; c.recent = recent; c.used = (S.c.used || []).slice(); c.lastApp = S.c.lastApp; c.mode = S.c.mode; return c; }
   function snap() { return { home: S.c.home.slice(), recent: S.c.recent.slice() }; }
   function pushRecent(list, id) { return [id].concat(without(list, id)).slice(0, 5); }
   function write(c, label) {
@@ -459,9 +470,27 @@
   function launch(id) {
     var a = app(id), c;
     if (!a || busy) return;
-    if (S.c.home.indexOf(id) >= 0) { c = next(S.c.home.slice(), S.c.recent.slice()); c.lastApp = id; write(c, 'Last app'); }
+    if (S.c.home.indexOf(id) >= 0) {
+      c = next(S.c.home.slice(), S.c.recent.slice());
+      c.lastApp = id; c.used = [id].concat(without(S.c.used || [], id)).slice(0, STAR_CAP);
+      write(c, 'Last app');
+    }
     S.press = id; S.lastLaunch = a.name;
     perform(a.name, function (done) { FrameDevice.launchApp(a.appId, done); });
+  }
+  /* Recently launched Home apps earn a small star, like a constellation that grows
+     with use. Kept in preferences so the sky remembers between evenings. */
+  function starred(id) { return (S.c.used || []).indexOf(id) >= 0; }
+  function starHtml() { return '<span class="constellation" aria-hidden="true">' + icon('star') + '</span>'; }
+  /* The greeting under the clock follows the time of day, with occasional attic whimsy. */
+  function greeting() {
+    var d = new Date(), h = d.getHours(), word, extra = '';
+    if (h >= 5 && h < 12) word = 'Good morning';
+    else if (h >= 12 && h < 17) word = 'Good afternoon';
+    else if (h >= 17 && h < 22) word = 'Good evening';
+    else word = 'Still up?';
+    if ((d.getDate() + h) % 3 === 0) extra = ' — the attic is quiet.';
+    return word + extra;
   }
   function refreshCatalog() {
     var request, oldFocus;
@@ -1089,6 +1118,7 @@
   }
   function renderCaption(t, hs) {
     var html = '<span class="clock">' + clockHtml() + '</span>';
+    if (t.id === 'home') html += '<span class="cap-line cap-greet">' + esc(greeting()) + '</span>';
     if (S.c.apps !== 'icons' && hs.items[hs.i] && (S.c.layout === 'list' ? photoLabel(hs.items[hs.i].id, false).size < 88 || photoLabel(hs.items[hs.i].id, false).ellipsis : hs.zone === 'apps' && reducedDockLabel(hs.items[hs.i].id))) html += '<span class="cap-line full-name">' + esc(app(hs.items[hs.i].id).name) + '</span>';
     setHTML(caption, html);
   }
@@ -1203,7 +1233,7 @@
     if (it.kind === 'add') return '<span class="add">' + icon('plus') + '</span><span class="label">' + (full ? 'Home is full' : 'Add app') + '</span>';
     a = app(it.id);
     body = S.c.apps === 'text' ? '' : appMark(a, S.c.apps === 'icons' ? 136 : 120, S.c.apps === 'icons' ? 88 : 72, S.c.apps === 'icons' ? 72 : 58);
-    return body + (S.c.apps === 'icons' ? '' : '<span class="label" style="font-size:' + dockLabelSize(a.id) + 'px;top:' + ((S.c.apps === 'text' ? 28 : 128) + fontShift('primary', dockLabelSize(a.id))) + 'px"><span class="label-ink">' + esc(a.name) + '</span></span>') + '<span class="nudge nudge-l">' + icon('left') + '</span><span class="nudge nudge-r">' + icon('right') + '</span>';
+    return body + (S.c.apps === 'icons' ? '' : '<span class="label" style="font-size:' + dockLabelSize(a.id) + 'px;top:' + ((S.c.apps === 'text' ? 28 : 128) + fontShift('primary', dockLabelSize(a.id))) + 'px"><span class="label-ink">' + esc(a.name) + '</span></span>') + '<span class="nudge nudge-l">' + icon('left') + '</span><span class="nudge nudge-r">' + icon('right') + '</span>' + (starred(it.id) ? starHtml() : '');
   }
   /* A wide label can reach the shelf before its icon. Check the rendered icon box,
      including during the track's 180ms transition, so both disappear together. */
@@ -1246,7 +1276,7 @@
     keyed(track, empty ? [] : items, function (el, it, i) {
       var a = it.id ? app(it.id) : null, left = i * g.pitch, focus = tileFocus && i === anchor, sel = tileSel && i === anchor;
       var lifted = hs.lifted && i === anchor, partial = g.broad && (left - off < -1 || left + g.tw - off > g.shelf + 1);
-      setContent(el, it.kind + '|' + (it.id || '') + '|' + (it.id ? dockLabelSize(it.id) : full) + '|' + S.c.bg + '|' + S.c.apps + '|' + homeFont(), function () { return '<span class="tile-content">' + dockTileHtml(it, full) + '</span>'; });
+      setContent(el, it.kind + '|' + (it.id || '') + '|' + (it.id ? dockLabelSize(it.id) : full) + '|' + S.c.bg + '|' + S.c.apps + '|' + homeFont() + '|' + (it.id && starred(it.id) ? 1 : 0), function () { return '<span class="tile-content">' + dockTileHtml(it, full) + '</span>'; });
       el.className = 'tile k-' + it.kind + (focus ? ' is-focus' : '') + (sel ? ' is-sel' : '') + (lifted ? ' is-lifted' : '') + (partial ? ' is-partial' : '')
         + (a && !a.mark ? ' is-text' : '') + (it.kind === 'add' && full ? ' is-full' : '') + (it.kind === 'app' && S.press === it.id ? ' is-press' : '')
         + (lifted && i === 0 ? ' no-l' : '') + (lifted && i >= ns - 1 ? ' no-r' : '');
@@ -1348,9 +1378,10 @@
     phRows.style.top = (compact ? 72 : 148) + 'px';
     keyed(phRows, items, function (row, it, i) {
       var typography = photoLabel(it.id, compact), focus = rowFocus && i === anchor, lifted = hs.lifted && i === anchor, markImage, body = '';
-      setContent(row, it.id + '|' + typography.size + '|' + S.c.bg + '|' + S.c.apps + '|' + homeFont(), function () {
+      setContent(row, it.id + '|' + typography.size + '|' + S.c.bg + '|' + S.c.apps + '|' + homeFont() + '|' + (starred(it.id) ? 1 : 0), function () {
         if (S.c.apps !== 'text') body += appMark(app(it.id), S.c.apps === 'icons' ? compact ? 64 : 88 : compact ? 60 : 84, S.c.apps === 'icons' ? compact ? 64 : 88 : compact ? 44 : 64, S.c.apps === 'icons' ? compact ? 52 : 72 : compact ? 42 : 54);
         if (S.c.apps !== 'icons') body += '<span class="ph-name" style="font-size:' + typography.size + 'px;top:' + typography.top + 'px">' + esc(app(it.id).name) + '</span>';
+        if (starred(it.id)) body += starHtml();
         return '<span class="ph-group">' + body + '</span><span class="ph-move ph-move-up">' + icon('up') + '</span><span class="ph-move ph-move-down">' + icon('down') + '</span>';
       });
       markImage = row.querySelector('.mark img');
@@ -1883,6 +1914,16 @@
     }
   });
   window.addEventListener('resize', fit);
+  /* Home semantics: pressing Home while the app is foreground lands on the app
+     home page (stack cleared), per owner request. Re-entry after other apps
+     keeps the session (previews survive, as the behaviour tests require). */
+  function goHomeRequest() {
+    if (S.stack.length > 1 || top().id !== 'home' || top().f.zone !== 'apps') goScene(null);
+    else focusStage();
+  }
+  try { if (window.tizen && tizen.tvinputdevice) tizen.tvinputdevice.registerKey('Home'); } catch (e) { }
+  document.addEventListener('appcontrol', function () { goHomeRequest(); }, false);
+  document.addEventListener('keydown', function (ev) { if (ev.key === 'Home' || ev.key === 'XF86Home') goHomeRequest(); }, false);
 
   /* Readable browser checks use the real state and actions, without fake outcomes. */
   var NAV = { left: 'left', right: 'right', up: 'up', down: 'down', ok: 'ok', enter: 'ok', back: 'back', escape: 'back' };

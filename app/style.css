@@ -2,6 +2,9 @@
 :root{
   --ink:#f4f4f1;
   --ease:cubic-bezier(.2,.7,.2,1);
+  /* Restrained spring: focus lifts land with a whisper of overshoot, never a wobble
+     under remote key-repeat. */
+  --spring:cubic-bezier(.22,1.08,.34,1);
   --t:180ms;
   --plate:linear-gradient(170deg,rgba(255,255,255,.30),rgba(255,255,255,.16) 58%,rgba(255,255,255,.22));
   --plate-edge:inset 0 1px 0 rgba(255,255,255,.34);
@@ -89,8 +92,16 @@ html,body{width:100%;height:100%;overflow:hidden;background:#000}
 .fv-5{--fv:.44}
 .m-tint .mat-veil{background:rgba(8,14,18,.3)}
 .tone-light.m-tint .mat-veil{background:rgba(8,14,18,.38)}
-/* One edge: a top hairline that follows the radius. No lower highlight, no outer shadow. */
-.mat::after{content:"";position:absolute;left:0;top:0;right:0;bottom:0;border-radius:48px;box-shadow:inset 0 1px 0 rgba(255,255,255,.24);pointer-events:none}
+/* Slab lighting: one bright top hairline, a whisper of rim around the bend, and a
+   thin contact shadow at the base — one consistent light source, top-left. */
+.mat::after{content:"";position:absolute;left:0;top:0;right:0;bottom:0;border-radius:48px;box-shadow:inset 1px 1px 0 rgba(255,240,216,.34),inset -1px -1px 0 rgba(10,7,4,.18);pointer-events:none}
+/* Ambient light on the pane: skylight spill upper-left, a faint vertical value fall
+   (the pane bends light downward), and an ember bounce lower-right. */
+.mat::before{content:"";position:absolute;z-index:1;top:0;right:0;bottom:0;left:0;background:radial-gradient(120% 80% at 18% 0%,rgba(255,242,222,.12),rgba(255,242,222,0) 52%),linear-gradient(180deg,rgba(255,246,232,.05),rgba(255,246,232,0) 26%,rgba(120,144,200,.03) 55%,rgba(20,12,6,.06)),radial-gradient(140% 60% at 82% 112%,rgba(201,123,58,.11),rgba(201,123,58,0) 58%);pointer-events:none}
+/* The dock floats: one soft directional ground shadow, painted once, never animated.
+   Offset toward the lower-right to agree with the single top-left light source;
+   blur stays modest so first paint of the slab is cheap on the TV's GPU. */
+.dock::before{content:"";position:absolute;left:26px;right:20px;top:52px;bottom:-14px;border-radius:60px;box-shadow:10px 20px 40px rgba(10,7,4,.24),6px 6px 14px rgba(10,7,4,.12);pointer-events:none}
 .shelf{position:absolute;left:16px;top:0;bottom:0;width:1472px;overflow:hidden}
 .shelf.fade-r{-webkit-mask-image:linear-gradient(to right,#000 calc(100% - 132px),rgba(0,0,0,.2));mask-image:linear-gradient(to right,#000 calc(100% - 132px),rgba(0,0,0,.2))}
 .shelf.fade-l{-webkit-mask-image:linear-gradient(to left,#000 calc(100% - 132px),rgba(0,0,0,.2));mask-image:linear-gradient(to left,#000 calc(100% - 132px),rgba(0,0,0,.2))}
@@ -113,7 +124,7 @@ html,body{width:100%;height:100%;overflow:hidden;background:#000}
 .monogram span{position:relative;width:1.65em;height:1.65em;display:flex;align-items:center;justify-content:center;border-radius:.4em}.monogram span::after{content:"";position:absolute;top:0;right:0;bottom:0;left:0;border:2px solid currentColor;border-radius:inherit;opacity:.38}
 .native-icon img{position:absolute;top:0;right:0;bottom:0;left:0;width:100%;height:100%;object-fit:contain}
 .native-icon.has-native-icon>span{visibility:hidden}
-.tile .mark{position:absolute;left:84px;top:34px;opacity:.84;transition:opacity 160ms linear,transform var(--t) var(--ease)}
+.tile .mark{position:absolute;left:84px;top:34px;opacity:.84;transition:opacity 160ms linear,transform 220ms var(--spring)}
 .tile .label{position:absolute;left:4px;right:4px;top:128px;text-align:center;font-size:36px;line-height:44px;letter-spacing:-.8px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;opacity:.84;transition:opacity 160ms linear}
 .tile .t-name{position:absolute;left:12px;right:12px;top:72px;text-align:center;font-size:40px;line-height:56px;letter-spacing:-1px;font-weight:600;white-space:nowrap;overflow:hidden;opacity:.84;transition:opacity 160ms linear}
 .tile.is-focus .mark,.tile.is-focus .label,.tile.is-focus .t-name,.tile.is-lifted .mark,.tile.is-lifted .label,.tile.is-lifted .t-name{opacity:1}
@@ -131,6 +142,7 @@ html,body{width:100%;height:100%;overflow:hidden;background:#000}
 .nudge-r{right:8px}
 .is-lifted .nudge{opacity:.9}
 .is-lifted.no-l .nudge-l,.is-lifted.no-r .nudge-r{opacity:0}
+.dock.is-empty::before{display:none}
 .tile.is-press .mark{animation:press 300ms var(--ease)}
 @keyframes press{0%{transform:translateY(-3px) scale(1.04)}40%{transform:translateY(0) scale(.94)}100%{transform:translateY(-3px) scale(1.04)}}
 .dock.is-empty .shelf{display:none}
@@ -168,7 +180,7 @@ html,body{width:100%;height:100%;overflow:hidden;background:#000}
 .ph-list{position:absolute;z-index:2;left:112px;top:72px;width:1200px;height:944px;overflow:hidden;pointer-events:auto;-webkit-mask-image:linear-gradient(to bottom,rgba(0,0,0,0.0000) 0px,rgba(0,0,0,0.0156) 20.5px,rgba(0,0,0,0.0625) 41px,rgba(0,0,0,0.1406) 61.5px,rgba(0,0,0,0.2500) 82px,rgba(0,0,0,0.3906) 102.5px,rgba(0,0,0,0.5625) 123px,rgba(0,0,0,0.7656) 143.5px,rgba(0,0,0,1.0000) 164px,#000 788px,rgba(0,0,0,0.7656) 807.5px,rgba(0,0,0,0.5625) 827px,rgba(0,0,0,0.3906) 846.5px,rgba(0,0,0,0.2500) 866px,rgba(0,0,0,0.1406) 885.5px,rgba(0,0,0,0.0625) 905px,rgba(0,0,0,0.0156) 924.5px,rgba(0,0,0,0.0000) 944px);mask-image:linear-gradient(to bottom,rgba(0,0,0,0.0000) 0px,rgba(0,0,0,0.0156) 20.5px,rgba(0,0,0,0.0625) 41px,rgba(0,0,0,0.1406) 61.5px,rgba(0,0,0,0.2500) 82px,rgba(0,0,0,0.3906) 102.5px,rgba(0,0,0,0.5625) 123px,rgba(0,0,0,0.7656) 143.5px,rgba(0,0,0,1.0000) 164px,#000 788px,rgba(0,0,0,0.7656) 807.5px,rgba(0,0,0,0.5625) 827px,rgba(0,0,0,0.3906) 846.5px,rgba(0,0,0,0.2500) 866px,rgba(0,0,0,0.1406) 885.5px,rgba(0,0,0,0.0625) 905px,rgba(0,0,0,0.0156) 924.5px,rgba(0,0,0,0.0000) 944px)}
 .ph-rows{position:absolute;left:0;top:0;width:1200px;transition:transform var(--t) var(--ease);will-change:transform}
 .ph-row{position:absolute;left:0;top:0;width:1200px;height:128px;transition:transform var(--t) var(--ease)}
-.ph-group{position:absolute;left:0;top:0;width:100%;height:100%;opacity:.8;transform-origin:28px 64px;transition:opacity 160ms linear,transform var(--t) var(--ease)}
+.ph-group{position:absolute;left:0;top:0;width:100%;height:100%;opacity:.8;transform-origin:28px 64px;transition:opacity 160ms linear,transform 220ms var(--spring)}
 .ph-group .mark{position:absolute;left:28px;top:32px}
 .ph-name{position:absolute;left:128px;top:10px;max-width:992px;font-size:88px;line-height:104px;font-weight:600;letter-spacing:-1.8px;color:var(--ph-ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-shadow:0 1px 2px rgba(14,10,6,.32),0 3px 14px rgba(14,10,6,.24)}
 .f-glass .ph-row.is-focus .ph-group,.f-glass .ph-row.is-sel .ph-group{opacity:1}
@@ -192,7 +204,7 @@ html,body{width:100%;height:100%;overflow:hidden;background:#000}
 .ph-field-img{position:absolute;left:0;top:0;width:1920px;height:1080px;max-width:none;object-fit:cover;object-position:50% 50%}
 .ph-veil{position:absolute;left:0;top:0;right:0;bottom:0;background:rgba(12,10,8,.12)}
 .tone-light .ph-veil{background:rgba(12,10,8,.2)}
-.ph-plate::after{content:"";position:absolute;left:0;top:0;right:0;bottom:0;border-radius:inherit;box-shadow:inset 0 1px 0 rgba(255,250,240,.24);opacity:0;pointer-events:none}
+.ph-plate::after{content:"";position:absolute;left:0;top:0;right:0;bottom:0;border-radius:inherit;box-shadow:inset 0 1px 0 rgba(255,250,240,.32),inset 0 0 0 1px rgba(255,244,222,.08),inset 0 -1px 0 rgba(10,7,4,.16);opacity:0;pointer-events:none}
 .ph-plate.on-focus::after,.ph-plate.on-lift::after{opacity:1}
 .ph-plate.on-lift .ph-veil{background:var(--lift)}
 .m-tint .ph-plate{background:none}
@@ -260,7 +272,7 @@ html,body{width:100%;height:100%;overflow:hidden;background:#000}
 .grid-in{position:absolute;left:0;top:0;width:1696px;transition:transform 220ms var(--ease);will-change:transform}
 .gt{position:absolute;left:0;top:0;width:320px;height:216px;border-radius:32px;transition:background-color 140ms linear}
 .gt.is-focus{background:var(--plate);box-shadow:var(--plate-edge)}
-.gt .mark{position:absolute;left:100px;top:30px;opacity:.88;transition:opacity 160ms linear,transform var(--t) var(--ease)}
+.gt .mark{position:absolute;left:100px;top:30px;opacity:.88;transition:opacity 160ms linear,transform 220ms var(--spring)}
 .gt.is-focus .mark{opacity:1;transform:translateY(-3px) scale(1.04)}
 .gt .label{position:absolute;left:12px;right:12px;top:114px;text-align:center;font-size:34px;line-height:44px;font-weight:500;letter-spacing:-.6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .gt .t-name{position:absolute;left:12px;right:12px;top:56px;text-align:center;font-size:40px;line-height:56px;font-weight:600;letter-spacing:-1px;white-space:nowrap;overflow:hidden}
@@ -288,8 +300,8 @@ html,body{width:100%;height:100%;overflow:hidden;background:#000}
 .grid-label{top:452px}
 
 /* Panel content uses an inner group so Type focus does not move the layout box. */
-.gt .panel-content,.sc .panel-content{position:absolute;top:0;right:0;bottom:0;left:0;transform-origin:50% 50%;transition:transform var(--t) var(--ease)}
-.er-name .panel-content,.eo .panel-content{display:flex;align-items:center;min-width:0;flex:1;height:100%;transform-origin:0 50%;transition:transform var(--t) var(--ease)}
+.gt .panel-content,.sc .panel-content{position:absolute;top:0;right:0;bottom:0;left:0;transform-origin:50% 50%;transition:transform 220ms var(--spring)}
+.er-name .panel-content,.eo .panel-content{display:flex;align-items:center;min-width:0;flex:1;height:100%;transform-origin:0 50%;transition:transform 220ms var(--spring)}
 .er-name .er-text{min-width:0}
 .f-type .sheet .gt,.f-type .sheet .er-name,.f-type .sheet .eo,.f-type .sheet .sc{background:none;box-shadow:none;opacity:.70;transition:opacity 160ms linear,transform var(--t) var(--ease)}
 .f-type .sheet .gt.is-focus,.f-type .sheet .er-name.is-focus,.f-type .sheet .eo.is-focus,.f-type .sheet .sc.is-focus,.f-type .sheet .sc.is-lifted,.f-type .sheet .er.is-lifted .er-name{background:none;box-shadow:none;opacity:1}
@@ -377,7 +389,7 @@ html,body{width:100%;height:100%;overflow:hidden;background:#000}
 /* ---------- Unified appearance ---------- */
 .stage{--mute:rgba(246,241,231,.76);--faint:rgba(246,241,231,.58);--line:rgba(246,241,231,.18);--knock:#1d1a16;--solid-mute:rgba(29,26,22,.68);--solid-warn:#8a4b00;--ink:#f6f1e7;--ground:#0d0d0d;--tr-ink:var(--ink);--br-ink:var(--ink);--tr-rest:.62;--br-rest:.62;--tr-peer:.434;--br-peer:.434;--tr-a:.20;--tr-b:.12;--br-a:.20;--br-b:.12;--tr-under:rgba(14,10,6,.38);--br-under:rgba(14,10,6,.38);--tr-shadow:0 1px 2px rgba(14,10,6,.4),0 2px 8px rgba(14,10,6,.24);--br-shadow:var(--tr-shadow);background:var(--ground)}
 .bg-light{--mute:rgba(29,26,22,.70);--faint:rgba(29,26,22,.52);--line:rgba(29,26,22,.14);--knock:#f2efe8;--solid-mute:rgba(242,239,232,.72);--solid-warn:#e8b36a;--ground:#f2efe8;--ink:#1d1a16;--warn:#8a4b00;--solid:#1d1a16;--solid-ink:#f2efe8;--plate:rgba(29,26,22,.07);--plate-edge:none;--lift:rgba(29,26,22,.13);--tr-peer:.52;--br-peer:.52}
-.bg-dark{--mute:rgba(246,241,231,.72);--faint:rgba(246,241,231,.50);--line:rgba(246,241,231,.14);--knock:#0d0d0d;--solid-mute:rgba(29,26,22,.68);--solid-warn:#8a4b00;--warn:#e8b36a;--plate:rgba(246,241,231,.08);--plate-edge:inset 0 1px 0 rgba(255,250,240,.1);--lift:rgba(246,241,231,.15)}
+.bg-dark{--mute:rgba(246,241,231,.72);--faint:rgba(246,241,231,.50);--line:rgba(246,241,231,.14);--knock:#0d0d0d;--solid-mute:rgba(29,26,22,.68);--solid-warn:#8a4b00;--warn:#e8b36a;--plate:rgba(246,241,231,.08);--plate-edge:inset 0 1px 0 rgba(255,250,240,.16),inset 0 0 0 1px rgba(255,248,236,.06);--lift:rgba(246,241,231,.15)}
 .scene{position:absolute;left:0;top:0;width:1920px;height:1080px;background:var(--ground);overflow:hidden;transform-origin:0 0}
 .at-appearance .scene,.at-wallpaper .scene{z-index:2;transform:translate3d(858px,288px,0) scale(.48);border-radius:32px;pointer-events:none}
 .bg-dark.at-appearance .scene,.bg-light.at-appearance .scene{box-shadow:0 0 0 4px var(--line)}
@@ -387,7 +399,7 @@ html,body{width:100%;height:100%;overflow:hidden;background:#000}
 .bg-dark .cap-title,.bg-light .cap-title,.bg-dark .cap-line,.bg-light .cap-line{color:var(--ink);text-shadow:none}
 .l-list .quiet-utils{right:122.1px;top:auto;bottom:112px;flex-direction:column;align-items:flex-end}
 .l-list .quiet-utils .u{flex:none}
-.u-content{position:relative;z-index:2;display:inline-flex;align-items:center;transition:transform 140ms var(--ease)}
+.u-content{position:relative;z-index:2;display:inline-flex;align-items:center;transition:transform 200ms var(--spring)}
 .quiet-utils .u-content{transform-origin:50% 50%}
 .l-list .quiet-utils .u-content{flex-direction:row-reverse;transform-origin:100% 50%}
 .l-list .quiet-utils .u-label{position:relative;top:-1px}
@@ -418,7 +430,7 @@ html,body{width:100%;height:100%;overflow:hidden;background:#000}
 .bg-dark .ph-action.is-focus,.bg-light .ph-action.is-focus{background:var(--solid);color:var(--solid-ink)}
 .bg-light .ph-list.is-compact .ph-row::before{background:rgba(29,26,22,.05)}
 .bg-dark .wall-keep,.bg-light .wall-keep{color:var(--ink)}
-.tile-content{position:absolute;top:0;right:0;bottom:0;left:0;border-radius:inherit;transform-origin:50% 50%;transition:opacity 160ms linear,transform var(--t) var(--ease)}
+.tile-content{position:absolute;top:0;right:0;bottom:0;left:0;border-radius:inherit;transform-origin:50% 50%;transition:opacity 160ms linear,transform 220ms var(--spring)}
 .f-type .plate{opacity:0}
 .f-type .tile-content{opacity:.62}
 .f-type .tile.is-focus .tile-content{opacity:1;transform:scale(1.06)}
@@ -633,3 +645,77 @@ html,body{width:100%;height:100%;overflow:hidden;background:#000}
 .l-list .quiet-utils.is-text .u-content>*+*{margin-left:0;margin-right:0}
 .quiet-utils.is-text .u-content>*+*{margin-left:0}
 .l-list .quiet-utils.is-text .u .u-content>*+*{margin-right:0}
+
+/* ---------- Attic office theme ----------
+   The TV lives in an attic: warm wood below, dusk-blue sky through the skylight,
+   string lights and dust in the air. Everything here is static paint (gradients,
+   shadows and slow transforms) — no live blur, no pixel sampling. */
+.stage{--amber:#f0a75a;--amber-soft:rgba(255,206,146,.86);--dusk:#1b1e33;--ember:#c97b3a}
+/* Glass reads as a bent pane: a left-edge caustic, a cooled middle, and a warm
+   bounce at the bottom where the floor lamp light returns through the pane. */
+/* The pane carries its bloom in paint, not in negative-spread shadows (Tizen
+   engines clip those): a dense specular band at the head of each gradient. */
+.stage{--plate:linear-gradient(90deg,rgba(255,246,230,.14) 0,rgba(255,246,230,0) 2.5%),linear-gradient(170deg,rgba(255,246,232,.38) 0,rgba(255,240,218,.15) 30%,rgba(120,144,200,.08) 52%,rgba(255,236,210,.10) 66%,rgba(255,229,198,.24))}
+.stage{--lift:linear-gradient(90deg,rgba(255,246,230,.20) 0,rgba(255,246,230,0) 2.5%),linear-gradient(170deg,rgba(255,246,232,.50) 0,rgba(255,240,218,.26) 30%,rgba(120,144,200,.11) 52%,rgba(255,236,210,.16) 66%,rgba(255,229,198,.36))}
+.stage{--plate-edge:inset 0 1px 0 rgba(255,242,220,.46)}
+.stage{--ground:radial-gradient(1400px 560px at 960px -160px,rgba(255,178,102,.13),rgba(255,178,102,0) 68%),radial-gradient(1700px 760px at 50% 116%,rgba(150,100,58,.16),rgba(150,100,58,0) 72%),linear-gradient(180deg,#181c2e 0%,#1c1620 42%,#231a12 78%,#2a1e13 100%)}
+.bg-light{--plate:rgba(58,38,20,.07);--lift:rgba(58,38,20,.13);--ground:radial-gradient(1200px 480px at 960px -140px,rgba(255,206,128,.55),rgba(255,206,128,0) 70%),linear-gradient(180deg,#f8f0de 0%,#f0e3ca 55%,#e6d5b8 100%)}
+.bg-dark{--plate:rgba(255,240,220,.08);--lift:rgba(255,240,220,.15)}
+.sheet{background:#1c1712}
+.sheet-veil{background:rgba(24,14,6,.44)}
+
+/* Over-painting: the photographic scrims move from cool charcoal to warm dusk. */
+.scrim{background:linear-gradient(to bottom,rgba(20,12,6,0),rgba(20,12,6,.42) 70%,rgba(20,12,6,.52))}
+.shade{background:linear-gradient(to bottom,rgba(20,12,6,.32),rgba(20,12,6,.14) 150px,rgba(20,12,6,0))}
+.tone-light .shade{background:linear-gradient(to bottom,rgba(20,12,6,.42),rgba(20,12,6,.2) 160px,rgba(20,12,6,0))}
+.mat-scrim{background:linear-gradient(to bottom,rgba(20,12,6,0),rgba(20,12,6,.42) 70%,rgba(20,12,6,.52))}
+.mat-veil{background:rgba(28,18,10,.16)}
+.tone-light .mat-veil{background:rgba(28,18,10,.27)}
+.ph-dim{background:linear-gradient(to right,rgba(20,12,6,.26) 0,rgba(20,12,6,.16) 960px,rgba(20,12,6,.08) 1920px)}
+.tone-light .ph-dim{background:linear-gradient(to right,rgba(20,12,6,.34) 0,rgba(20,12,6,.24) 960px,rgba(20,12,6,.14) 1920px)}
+.ph-scrim{background:linear-gradient(to bottom,rgba(20,12,6,0),rgba(20,12,6,.26) 55%,rgba(20,12,6,.4))}
+.ph-col{background:linear-gradient(to right,rgba(20,12,6,.18) 0,rgba(20,12,6,.18) 600px,rgba(20,12,6,0) 1040px)}
+.tone-light .ph-col{background:linear-gradient(to right,rgba(20,12,6,.28) 0,rgba(20,12,6,.28) 600px,rgba(20,12,6,0) 1040px)}
+
+/* The attic dressing sits between the wallpaper and the interface. */
+.attic{position:absolute;left:0;top:0;width:1920px;height:1080px;pointer-events:none}
+.bg-photo .attic{opacity:.38}
+.bg-light .attic .stars,.bg-light .attic .motes{opacity:.5}
+.attic .sky{position:absolute;left:0;top:0;width:1920px;height:620px;background:radial-gradient(860px 340px at 1330px 70px,rgba(255,196,128,.12),rgba(255,196,128,0) 72%),radial-gradient(1150px 430px at 620px -80px,rgba(118,142,214,.13),rgba(118,142,214,0) 72%)}
+.attic .rafter{position:absolute;border-radius:12px;background:linear-gradient(180deg,rgba(146,99,60,.28),rgba(102,68,40,.18));box-shadow:0 1px 0 rgba(255,220,170,.07)}
+.attic .r1{left:-140px;top:148px;width:2260px;height:22px;transform:rotate(-3.6deg)}
+.attic .r2{left:-140px;top:236px;width:2260px;height:15px;opacity:.55;transform:rotate(-3.6deg)}
+.attic .lights{position:absolute;left:40px;top:0;width:1840px;height:110px;background-image:
+  radial-gradient(circle 6px at 320px 14px,rgba(255,196,120,.9),rgba(255,166,84,.30) 14px,rgba(255,166,84,0) 27px),
+  radial-gradient(circle 6px at 560px 28px,rgba(255,196,120,.9),rgba(255,166,84,.30) 14px,rgba(255,166,84,0) 27px),
+  radial-gradient(circle 6px at 800px 40px,rgba(255,196,120,.9),rgba(255,166,84,.30) 14px,rgba(255,166,84,0) 27px),
+  radial-gradient(circle 6px at 1040px 44px,rgba(255,196,120,.9),rgba(255,166,84,.30) 14px,rgba(255,166,84,0) 27px),
+  radial-gradient(circle 6px at 1280px 38px,rgba(255,196,120,.9),rgba(255,166,84,.30) 14px,rgba(255,166,84,0) 27px),
+  radial-gradient(circle 6px at 1480px 24px,rgba(255,196,120,.9),rgba(255,166,84,.30) 14px,rgba(255,166,84,0) 27px),
+  radial-gradient(circle 6px at 1640px 10px,rgba(255,196,120,.9),rgba(255,166,84,.30) 14px,rgba(255,166,84,0) 27px)}
+.attic .motes{position:absolute;left:280px;top:140px;width:1400px;height:720px;background-image:radial-gradient(circle 2.2px,rgba(255,224,180,.30),rgba(255,224,180,0) 5px),radial-gradient(circle 1.6px,rgba(255,214,170,.22),rgba(255,214,170,0) 3.5px);background-size:331px 271px,463px 337px;background-position:37px 29px,151px 83px;animation:mote-drift 90s ease-in-out infinite alternate;will-change:transform}
+.attic .stars{position:absolute;left:0;top:0;width:1920px;height:300px;background-image:radial-gradient(circle 1.5px,rgba(255,240,222,.75),rgba(255,240,222,0) 3.5px),radial-gradient(circle 1px,rgba(255,240,222,.5),rgba(255,240,222,0) 2.5px),radial-gradient(circle 1.2px,rgba(210,220,255,.5),rgba(210,220,255,0) 3px);background-size:353px 281px,197px 173px,431px 251px;background-position:23px 17px,109px 71px,67px 131px;opacity:.5}
+@keyframes mote-drift{from{transform:translate3d(0,0,0)}to{transform:translate3d(26px,-14px,0)}}
+.attic .cat-wrap{position:absolute;left:-150px;top:112px;width:2260px;height:70px;transform:rotate(-3.6deg)}
+.attic .cat{position:absolute;left:0;top:0;width:118px;height:64px;opacity:0;fill:rgba(14,9,5,.66);stroke:rgba(255,205,140,.30);stroke-width:1.2;animation:cat-walk 420s linear infinite;will-change:transform,opacity}
+@keyframes cat-walk{0%,46%{transform:translate3d(0,0,0);opacity:0}46.6%{opacity:.8}61%{transform:translate3d(2280px,0,0);opacity:.8}61.6%,100%{transform:translate3d(2280px,0,0);opacity:0}}
+/* Performance: behind a sheet the attic is fully covered, so its dust and cat stop
+   compositing entirely (transform-only animations paused, layer left in place). */
+.is-sheet .attic .motes,.is-sheet .attic .cat{animation-play-state:paused}
+.is-sheet .attic{visibility:hidden}
+
+/* Time-of-day greeting under the clock. */
+.cap-greet{font-size:29px;line-height:40px;font-weight:500;letter-spacing:-.2px;color:var(--amber-soft);text-shadow:0 1px 2px rgba(20,12,6,.32);white-space:nowrap}
+.bg-dark .cap-greet,.bg-light .cap-greet{text-shadow:none}
+.bg-light .cap-greet{color:rgba(122,74,26,.92)}
+
+/* Constellation stars: recently used Home apps carry a little star. */
+.constellation{position:absolute;right:14px;top:14px;width:24px;height:24px;color:#ffce8f;opacity:.95;text-shadow:0 0 12px rgba(255,190,110,.5);pointer-events:none}
+.constellation .ico{width:24px;height:24px;stroke-width:1.5}
+.tile .constellation{z-index:1}
+.ph-row .constellation{left:64px;top:0;width:20px;height:20px}
+.ph-row .constellation .ico{width:20px;height:20px}
+.ph-list.is-compact .constellation{display:none}
+.a-icons .tile .constellation{right:8px}
+.bg-light .constellation{color:#c07c2c;text-shadow:none}
+@media(prefers-reduced-motion:reduce){.attic .motes,.attic .cat{animation:none!important}}
