@@ -111,13 +111,10 @@
   }
   function art(done) {
     if (!api()) { unavailable(done); return; }
-    var finish = bounded(done), fell = false;
-    function fallback() { if (fell) return; fell = true; launchApp('AtcSaver01.Saver', finish); }
-    try {
-      var data = [new tizen.ApplicationControlData('mode', ['fullscreen']), new tizen.ApplicationControlData('requester', ['mobile'])];
-      var control = new tizen.ApplicationControl('http://tizen.org/appcontrol/operation/default', null, null, null, data);
-      api().launchAppControl(control, 'org.tizen.art-app', function () { finish(null); }, function () { fallback(); });
-    } catch (err) { fallback(); }
+    // org.tizen.art-app (Frame series) is absent on this TV; the attic
+    // screensaver is the art/ambient mode here. Launch it directly — attempting
+    // the missing app first just stalls the remote with no callback.
+    launchApp('AtcSaver01.Saver', done);
   }
   function home(done) { launchApp('com.samsung.tv.csfs', done); }
   function settings(done) { launchApp('com.samsung.tv.coba.setting', done); }
